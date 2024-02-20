@@ -1548,6 +1548,17 @@ dependencies = [
 ]
 
 [[package]]
+name = "serde_repr"
+version = "0.1.18"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "0b2e6b945e9d3df726b65d6ee24060aff8e3533d431f677a9695db04eff9dfdb"
+dependencies = [
+ "proc-macro2",
+ "quote",
+ "syn 2.0.48",
+]
+
+[[package]]
 name = "serde_spanned"
 version = "0.6.5"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -2115,6 +2126,21 @@ dependencies = [
 [[package]]
 name = "virtual-mio"
 version = "0.3.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "b9f38a379f14296f9fb93eda42ece4d57b568af417569102c3dcfeb88ab4800f"
+dependencies = [
+ "async-trait",
+ "bytes",
+ "derivative",
+ "futures",
+ "serde",
+ "thiserror",
+ "tracing",
+]
+
+[[package]]
+name = "virtual-mio"
+version = "0.3.0"
 source = "git+https://github.com/wasmerio/wasmer?branch=master#0cf0f5b26debffa1d4e615732ab1b55b991ef687"
 dependencies = [
  "async-trait",
@@ -2148,7 +2174,7 @@ dependencies = [
  "tokio-serde",
  "tokio-util",
  "tracing",
- "virtual-mio",
+ "virtual-mio 0.3.0 (git+https://github.com/wasmerio/wasmer?branch=master)",
 ]
 
 [[package]]
@@ -2506,11 +2532,13 @@ dependencies = [
  "once_cell",
  "serde",
  "serde-wasm-bindgen 0.6.3",
+ "serde_repr",
  "tokio",
  "tracing",
  "tracing-subscriber",
  "url",
  "virtual-fs",
+ "virtual-mio 0.3.0 (registry+https://github.com/rust-lang/crates.io-index)",
  "virtual-net",
  "wasm-bindgen",
  "wasm-bindgen-derive",
@@ -2634,7 +2662,7 @@ dependencies = [
  "url",
  "urlencoding",
  "virtual-fs",
- "virtual-mio",
+ "virtual-mio 0.3.0 (git+https://github.com/wasmerio/wasmer?branch=master)",
  "virtual-net",
  "wai-bindgen-wasmer",
  "waker-fn",

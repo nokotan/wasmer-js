@@ -1,0 +1,167 @@
+use serde::{Deserialize, Serialize};
+use serde_repr::{Deserialize_repr, Serialize_repr};
+use virtual_fs::DirEntry;
+use virtual_fs::Metadata;
+use virtual_fs::ReadDir;
+use wasm_bindgen::prelude::*;
+
+use super::{DirectoryEntries, FileEntry};
+
+#[derive(Copy, Clone, Debug, PartialEq, Serialize_repr, Deserialize_repr)]
+#[repr(u32)]
+pub enum FileType {
+    Unknown = 0b00000000,
+    File = 0b00000001,
+    Directory = 0b00000010,
+}
+
+impl From<JsValue> for FileType {
+    fn from(js: JsValue) -> Self {
+        let value = js.as_f64().map(|v| v as u32);
+        match value {
+            Some(0b01) => FileType::File,
+            Some(0b10) => FileType::Directory,
+            _ => FileType::Unknown,
+        }
+    }
+}
+
+impl From<virtual_fs::FileType> for FileType {
+    fn from(value: virtual_fs::FileType) -> Self {
+        if value.is_file() {
+            FileType::File
+        } else if value.is_dir() {
+            FileType::Directory
+        } else {
+            FileType::Unknown
+        }
+    }
+}
+
+impl Into<virtual_fs::FileType> for FileType {
+    fn into(self) -> virtual_fs::FileType {
+        match self {
+            FileType::File => virtual_fs::FileType {
+                dir: false,
+                file: true,
+                symlink: false,
+                char_device: false,
+                block_device: false,
+                socket: false,
+                fifo: false,
+            },
+            FileType::Directory => virtual_fs::FileType {
+                dir: true,
+                file: false,
+                symlink: false,
+                char_device: false,
+                block_device: false,
+                socket: false,
+                fifo: false,
+            },
+            FileType::Unknown => virtual_fs::FileType {
+                dir: false,
+                file: false,
+                symlink: false,
+                char_device: false,
+                block_device: false,
+                socket: false,
+                fifo: false,
+            },
+        }
+    }
+}
+
+#[derive(Serialize, Deserialize, Debug)]
+pub struct FileStat {
+    #[serde(rename = "type")]
+    pub file_type: FileType,
+
+    pub ctime: u64,
+
+    pub mtime: u64,
+
+    pub size: u64,
+}
+
+impl FileStat {
+    pub fn new() -> Self {
+        Self {
+            file_type: FileType::File,
+            ctime: 0u64,
+            mtime: 0u64,
+            size: 0u64,
+        }
+    }
+}
+
+impl From<Metadata> for FileStat {
+    fn from(from: Metadata) -> FileStat {
+        FileStat {
+            file_type: FileType::from(from.file_type()),
+            ctime: from.created,
+            mtime: from.modified,
+            size: from.len,
+        }
+    }
+}
+
+impl Into<Metadata> for FileStat {
+    fn into(self) -> Metadata {
+        Metadata {
+            ft: self.file_type.into(),
+            accessed: self.mtime,
+            created: self.ctime,
+            modified: self.mtime,
+            len: self.size,
+        }
+    }
+}
+
+impl Into<FileEntry> for FileStat {
+    fn into(self) -> FileEntry {
+        serde_wasm_bindgen::to_value(&self).unwrap().into()
+    }
+}
+
+impl From<FileEntry> for FileStat {
+    fn from(value: FileEntry) -> Self {
+        serde_wasm_bindgen::from_value(value.into()).unwrap()
+    }
+}
+
+impl From<ReadDir> for DirectoryEntries {
+    fn from(value: ReadDir) -> Self {
+        let entries: Vec<_> = value
+            .into_iter()
+            .map(|meta| {
+                let meta = meta.unwrap();
+                (
+                    meta.path.to_string_lossy().to_string(),
+                    FileStat::from(meta.metadata.unwrap()).file_type,
+                )
+            })
+            .collect();
+        serde_wasm_bindgen::to_value(&entries).unwrap().into()
+    }
+}
+
+impl Into<ReadDir> for DirectoryEntries {
+    fn into(self) -> ReadDir {
+        let entries: Vec<(String, FileType)> = serde_wasm_bindgen::from_value(self.into()).unwrap();
+        let entries: Vec<_> = entries
+            .into_iter()
+            .map(|(path, file_type)| DirEntry {
+                path: path.into(),
+                metadata: Ok(Metadata {
+                    ft: file_type.into(),
+                    accessed: 0u64,
+                    created: 0u64,
+                    modified: 0u64,
+                    len: 0u64,
+                }),
+            })
+            .collect();
+        ReadDir::new(entries)
+    }
+}

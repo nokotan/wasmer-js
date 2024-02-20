@@ -3,6 +3,7 @@ wasm_bindgen_test::wasm_bindgen_test_configure!(run_in_browser);
 
 extern crate alloc;
 
+mod codefs;
 pub mod fs;
 mod instance;
 mod js_runtime;
@@ -15,6 +16,7 @@ mod runtime;
 mod streams;
 mod tasks;
 mod utils;
+mod vscode;
 mod wasmer;
 mod ws;
 
