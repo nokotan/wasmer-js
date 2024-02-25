@@ -2,11 +2,11 @@ use std::{collections::BTreeMap, sync::Arc};
 
 use anyhow::Context;
 use js_sys::Array;
-use virtual_fs::TmpFileSystem;
+use virtual_fs::{FileSystem, TmpFileSystem};
 use wasm_bindgen::{prelude::wasm_bindgen, JsCast, JsValue, UnwrapThrowExt};
 use wasmer_wasix::WasiEnvBuilder;
 
-use crate::{runtime::Runtime, utils::Error, Directory, DirectoryInit, JsRuntime, StringOrBytes};
+use crate::{runtime::Runtime, utils::Error, wasifs::WasiFS, Directory, DirectoryInit, JsRuntime, StringOrBytes};
 
 #[wasm_bindgen]
 extern "C" {
@@ -111,7 +111,7 @@ impl CommonOptions {
         self.stdin().map(|s| s.as_bytes())
     }
 
-    pub(crate) fn mounted_directories(&self) -> Result<Vec<(String, Directory)>, Error> {
+    pub(crate) fn mounted_directories(&self) -> Result<Vec<(String, Arc<dyn FileSystem + Send + Sync>)>, Error> {
         let Ok(obj) = self.mount().dyn_into::<js_sys::Object>() else {
             return Ok(Vec::new());
         };
@@ -124,15 +124,21 @@ impl CommonOptions {
 
             // Note: the value is a `Directory | DirectoryInit`
 
-            let value = if let Ok(dir) = Directory::try_from(value) {
-                dir
-            } else if value.is_object() {
-                // looks like we were given parameters for initializing a
-                // Directory and need to call the constructor ourselves
-                let init: &DirectoryInit = value.unchecked_ref();
-                Directory::new(Some(init.clone()))?
-            } else {
-                unreachable!();
+            let value: Arc<dyn FileSystem + Send + Sync> = {
+                if let Ok(dir) = Directory::try_from(value) {
+                    Arc::new(dir)
+                } else {
+                    if let Ok(wasifs) = WasiFS::try_from(value) {
+                        Arc::new(wasifs)
+                    } else if value.is_object() {
+                        // looks like we were given parameters for initializing a
+                        // Directory and need to call the constructor ourselves
+                        let init: &DirectoryInit = value.unchecked_ref();
+                        Arc::new(Directory::new(Some(init.clone()))?)
+                    } else {
+                        unreachable!();
+                    }
+                }
             };
             mounted_directories.push((key, value));
         }
@@ -218,7 +224,6 @@ impl RunOptions {
         for (dest, fs) in self.mounted_directories()? {
             tracing::trace!(%dest, ?fs, "Mounting directory");
 
-            let fs = Arc::new(fs) as Arc<_>;
             root.mount(dest.as_str().into(), &fs, "/".into())
                 .with_context(|| format!("Unable to mount to \"{dest}\""))?;
         }

@@ -222,7 +222,7 @@ pub(crate) async fn configure_runner(
     runner.set_envs(env);
 
     for (dest, dir) in options.mounted_directories()? {
-        runner.mount(dest, Arc::new(dir));
+        runner.mount(dest, dir);
     }
 
     if let Some(uses) = options.uses() {
