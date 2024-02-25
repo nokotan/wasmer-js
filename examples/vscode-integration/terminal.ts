@@ -1,6 +1,6 @@
+import * as vscode from 'vscode';
 import { Pseudoterminal, Event, EventEmitter, TerminalDimensions, workspace, Uri } from 'vscode';
-import { importVSCode } from './vscode';
-import { Wasmer, Directory, Instance } from '@wasmer/sdk';
+import { Wasmer, Instance, WasiFS, Directory } from '@wasmer/sdk';
 
 export class WasmPseudoTerminal implements Pseudoterminal {
 	onDidWrite: Event<string>;
@@ -13,8 +13,7 @@ export class WasmPseudoTerminal implements Pseudoterminal {
 	private encoder = new TextEncoder();
 	private decoder = new TextDecoder();
 
-	private constructor(private session: Instance, private writeEmitter: EventEmitter<string>, private closeEmitter: EventEmitter<number>) {
-		
+	private constructor(private session: Instance, private writeEmitter: EventEmitter<string>, private closeEmitter: EventEmitter<number>) {	
 		this.stdin = session.stdin?.getWriter();
 
 		session.stdout.pipeTo(new WritableStream<Uint8Array>({ write: chunk => this.write(chunk) }));
@@ -24,11 +23,10 @@ export class WasmPseudoTerminal implements Pseudoterminal {
 		this.onDidClose = this.closeEmitter.event;
 	}
 
-	static async createWasmPseudoTerminal(bootCommand: Wasmer, fs: Directory) {
-		const vscode = await importVSCode();
+	static async createWasmPseudoTerminal(bootCommand: Wasmer, fs: WasiFS) {
 		const instance = await bootCommand.entrypoint!.run({
 			mount: {
-				"/mnt": fs
+				"/workspace": fs as unknown as Directory
 			}
 		});
 		return new WasmPseudoTerminal(instance, new vscode.EventEmitter<string>(), new vscode.EventEmitter<number>());

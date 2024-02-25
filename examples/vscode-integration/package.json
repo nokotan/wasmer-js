@@ -18,7 +18,8 @@
     "url": "git+https://github.com/wasmerio/wasmer-js.git"
   },
   "dependencies": {
-    "@wasmer/sdk": "../.."
+    "@wasmer/sdk": "../..",
+    "vscode-interop": "../../vscode-interop"
   },
   "devDependencies": {
     "@rollup/plugin-commonjs": "^17.1.0",
