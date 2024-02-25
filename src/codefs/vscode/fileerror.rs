@@ -1,7 +1,7 @@
 use virtual_fs::FsError;
 use wasm_bindgen::prelude::*;
 
-#[wasm_bindgen(module = "/js/vscode.ts")]
+#[wasm_bindgen(module = "vscode-interop")]
 extern "C" {
     #[wasm_bindgen]
     #[derive(Debug)]

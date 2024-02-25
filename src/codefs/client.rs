@@ -16,67 +16,80 @@ impl CodeFSClient {
         Self { tx }
     }
 
-    pub fn read_all(&self, path: &std::path::Path) -> Result<Vec<u8>, FsError> {
+    pub async fn read_all(&self, path: &std::path::Path) -> Result<Vec<u8>, FsError> {
         let (tx, mut rx) = mpsc::channel(1);
 
-        InlineWaker::block_on(self.tx.send(FileCommands::ReadFile {
-            path: path.into(),
-            tx,
-        }))
-        .map_err(|_| FsError::IOError)?;
-        let data = InlineWaker::block_on(rx.recv());
-        Ok(data.unwrap())
+        self.tx
+            .send(FileCommands::ReadFile {
+                path: path.into(),
+                tx,
+            })
+            .await
+            .map_err(|_| FsError::IOError)?;
+        Ok(rx.recv().await.unwrap())
     }
 
-    pub fn write_all(&self, path: &std::path::Path, data: &[u8]) -> Result<(), FsError> {
+    pub async fn write_all(&self, path: &std::path::Path, data: &[u8]) -> Result<(), FsError> {
         let (tx, mut rx) = mpsc::channel(1);
 
-        InlineWaker::block_on(self.tx.send(FileCommands::WriteFile {
-            path: path.into(),
-            data: data.to_vec(),
-            tx,
-        }))
-        .map_err(|_| FsError::IOError)?;
-        InlineWaker::block_on(rx.recv());
+        self.tx
+            .send(FileCommands::WriteFile {
+                path: path.into(),
+                data: data.to_vec(),
+                tx,
+            })
+            .await
+            .map_err(|_| FsError::IOError)?;
+        rx.recv().await;
         Ok(())
     }
 }
 
 impl virtual_fs::FileSystem for CodeFSClient {
     fn metadata(&self, path: &std::path::Path) -> virtual_fs::Result<Metadata> {
-        let (tx, mut rx) = mpsc::channel(1);
+        InlineWaker::block_on(async move {
+            let (tx, mut rx) = mpsc::channel(1);
 
-        InlineWaker::block_on(self.tx.send(FileCommands::Stat {
-            path: path.into(),
-            tx,
-        }))
-        .map_err(|_| FsError::IOError)?;
-        let metadata = InlineWaker::block_on(rx.recv());
-        metadata.unwrap()
+            self.tx
+                .send(FileCommands::Stat {
+                    path: path.into(),
+                    tx,
+                })
+                .await
+                .map_err(|_| FsError::IOError)?;
+            rx.recv().await.unwrap()
+        })
     }
 
     fn create_dir(&self, path: &std::path::Path) -> virtual_fs::Result<()> {
-        let (tx, mut rx) = mpsc::channel(1);
+        InlineWaker::block_on(async move {
+            let (tx, mut rx) = mpsc::channel(1);
 
-        InlineWaker::block_on(self.tx.send(FileCommands::CreateDirectory {
-            path: path.into(),
-            tx,
-        }))
-        .map_err(|_| FsError::IOError)?;
-        InlineWaker::block_on(rx.recv());
-        Ok(())
+            self.tx
+                .send(FileCommands::CreateDirectory {
+                    path: path.into(),
+                    tx,
+                })
+                .await
+                .map_err(|_| FsError::IOError)?;
+            rx.recv().await;
+            Ok(())
+        })
     }
 
     fn read_dir(&self, path: &std::path::Path) -> virtual_fs::Result<ReadDir> {
-        let (tx, mut rx) = mpsc::channel(1);
+        InlineWaker::block_on(async move {
+            let (tx, mut rx) = mpsc::channel(1);
 
-        InlineWaker::block_on(self.tx.send(FileCommands::ReadDirectory {
-            path: path.into(),
-            tx,
-        }))
-        .map_err(|_| FsError::IOError)?;
-        let readdir = InlineWaker::block_on(rx.recv());
-        readdir.unwrap()
+            self.tx
+                .send(FileCommands::ReadDirectory {
+                    path: path.into(),
+                    tx,
+                })
+                .await
+                .map_err(|_| FsError::IOError)?;
+            rx.recv().await.unwrap()
+        })
     }
 
     fn rename<'a>(&'a self, from: &'a Path, to: &'a Path) -> BoxFuture<'a, virtual_fs::Result<()>> {
@@ -97,31 +110,38 @@ impl virtual_fs::FileSystem for CodeFSClient {
     }
 
     fn remove_file(&self, path: &std::path::Path) -> virtual_fs::Result<()> {
-        let (tx, mut rx) = mpsc::channel(1);
+        InlineWaker::block_on(async move {
+            let (tx, mut rx) = mpsc::channel(1);
 
-        InlineWaker::block_on(self.tx.send(FileCommands::Delete {
-            path: path.into(),
-            tx,
-        }))
-        .map_err(|_| FsError::IOError)?;
-        InlineWaker::block_on(rx.recv());
-        Ok(())
+            self.tx
+                .send(FileCommands::Delete {
+                    path: path.into(),
+                    tx,
+                })
+                .await
+                .map_err(|_| FsError::IOError)?;
+            rx.recv().await;
+            Ok(())
+        })
     }
 
     fn remove_dir(&self, path: &std::path::Path) -> virtual_fs::Result<()> {
-        let (tx, mut rx) = mpsc::channel(1);
+        InlineWaker::block_on(async move {
+            let (tx, mut rx) = mpsc::channel(1);
 
-        InlineWaker::block_on(self.tx.send(FileCommands::Delete {
-            path: path.into(),
-            tx,
-        }))
-        .map_err(|_| FsError::IOError)?;
-        InlineWaker::block_on(rx.recv());
-        Ok(())
+            self.tx
+                .send(FileCommands::Delete {
+                    path: path.into(),
+                    tx,
+                })
+                .await
+                .map_err(|_| FsError::IOError)?;
+            rx.recv().await;
+            Ok(())
+        })
     }
 
     fn new_open_options(&self) -> virtual_fs::OpenOptions {
         virtual_fs::OpenOptions::new(self)
     }
 }
-

@@ -2,12 +2,10 @@ use futures::future::BoxFuture;
 use std::cmp;
 use std::convert::TryInto;
 use std::io;
+use std::path::PathBuf;
 use std::pin::Pin;
 use std::task::{Context, Poll};
-use std::{
-    io::{Read, Write},
-    path::PathBuf,
-};
+use virtual_mio::InlineWaker;
 
 use crate::codefs::client::CodeFSClient;
 use virtual_fs::{AsyncRead, AsyncSeek, AsyncWrite, FileSystem, Metadata, VirtualFile};
@@ -128,8 +126,8 @@ impl AsyncWrite for CodeFSVirtualFile {
         Poll::Ready(Ok(buf.len()))
     }
 
-    fn poll_flush(mut self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<io::Result<()>> {
-        self.fs.write_all(&self.path, &self.buffer);
+    fn poll_flush(self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<io::Result<()>> {
+        InlineWaker::block_on(self.fs.write_all(&self.path, &self.buffer));
         Poll::Ready(Ok(()))
     }
 
@@ -188,7 +186,7 @@ impl AsyncSeek for CodeFSVirtualFile {
         Ok(())
     }
 
-    fn poll_complete(mut self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<io::Result<u64>> {
+    fn poll_complete(self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<io::Result<u64>> {
         let to_err = |_| io::ErrorKind::InvalidInput;
 
         Poll::Ready(Ok(self.cursor.try_into().map_err(to_err)?))

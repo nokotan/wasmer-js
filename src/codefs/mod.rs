@@ -2,6 +2,7 @@ pub mod client;
 pub mod file;
 pub mod fs;
 pub mod opener;
+pub mod vscode;
 
 use std::path::PathBuf;
 

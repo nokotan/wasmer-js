@@ -5,7 +5,7 @@ use virtual_fs::Metadata;
 use virtual_fs::ReadDir;
 use wasm_bindgen::prelude::*;
 
-use super::{DirectoryEntries, FileEntry};
+use crate::codefs::vscode::filesystem::{DirectoryEntries, FileEntry};
 
 #[derive(Copy, Clone, Debug, PartialEq, Serialize_repr, Deserialize_repr)]
 #[repr(u32)]

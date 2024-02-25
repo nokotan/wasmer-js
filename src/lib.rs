@@ -16,7 +16,7 @@ mod runtime;
 mod streams;
 mod tasks;
 mod utils;
-mod vscode;
+mod wasifs;
 mod wasmer;
 mod ws;
 

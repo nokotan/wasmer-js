@@ -25,7 +25,7 @@ extern "C" {
     pub type DirectoryEntries;
 }
 
-#[wasm_bindgen(module = "/js/vscode.ts")]
+#[wasm_bindgen(module = "vscode-interop")]
 extern "C" {
 
     pub type FileSystem;
