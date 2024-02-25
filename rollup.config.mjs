@@ -7,7 +7,7 @@ import copy from 'rollup-plugin-copy';
 import { wasm } from '@rollup/plugin-wasm';
 
 const LIBRARY_NAME = "WasmerSDK"; // Change with your library's name
-const EXTERNAL = []; // Indicate which modules should be treated as external
+const EXTERNAL = ["vscode", "vscode-interop"]; // Indicate which modules should be treated as external
 const GLOBALS = {}; // https://rollupjs.org/guide/en/#outputglobals
 
 const banner = `/*!
@@ -21,7 +21,7 @@ const banner = `/*!
  * @license ${pkg.license}
  */`;
 
-const makeConfig = (env = "development", input, name, plugins = []) => {
+const makeConfig = (env = "development", input, name, plugins = [], externals = []) => {
     const config = {
         input,
         external: EXTERNAL,

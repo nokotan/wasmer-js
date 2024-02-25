@@ -1,0 +1,16 @@
+{
+  "name": "vscode-interop",
+  "version": "1.0.0",
+  "description": "",
+  "main": "dist/vscode.js",
+  "types": "dist/vscode.d.ts",
+  "scripts": {
+    "build": "tsc"
+  },
+  "keywords": [],
+  "author": "kamenokonokotan",
+  "license": "MIT",
+  "devDependencies": {
+    "typescript": "^5.3.3"
+  }
+}

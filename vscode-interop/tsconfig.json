@@ -1,12 +1,4 @@
 {
-  "include": [
-    "pkg",
-    "WasmerSDK.ts",
-    "WasmerSDKBundled.ts"
-  ],
-  "exclude": [
-    "dist"
-  ],
   "compilerOptions": {
     "outDir": "./dist/",
     "rootDir": ".",
@@ -14,9 +6,6 @@
     "declaration": true,
     "module": "es2020",
     "target": "ESNext",
-    "jsx": "react",
-    "allowJs": true,
-    "emitDeclarationOnly": true,
     "skipLibCheck": true,
     "allowSyntheticDefaultImports": true,
     "moduleResolution": "node"
