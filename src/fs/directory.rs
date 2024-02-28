@@ -144,6 +144,10 @@ impl Directory {
 }
 
 impl Directory {
+    pub fn from_raw_fs(fs: Arc<dyn FileSystem>) -> Self {
+        Self(fs)
+    }
+
     async fn _read_file(&self, mut path: String) -> Result<Vec<u8>, Error> {
         if !path.starts_with('/') {
             path.insert(0, '/');

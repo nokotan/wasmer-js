@@ -1,6 +1,5 @@
 import * as vscode from 'vscode';
 import { Wasmer, init, WasiFS, initializeLogger, setWorkerUrl, setDefaultWorkerUrl } from "@wasmer/sdk";
-import WasmerSDKPath from "../../dist/wasmer_js_bg.wasm";
 import { importVSCode } from 'vscode-interop';
 import { WasmPseudoTerminal } from './terminal';
 
